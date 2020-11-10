@@ -7,16 +7,11 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import * as Permissions from 'expo-permissions';
 
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: false,
-        shouldSetBadge: false,
-    }),
-});
-
+// Keep track of 2 separate timers. 
+// There'll be a timer (120 seconds by default) to refresh the API, and a timer that ticks every second until the next update.
 var apiInterval, timerInterval;
 
+// Make everything look pretty.
 const style = StyleSheet.create({
     container: {
         padding: 10
@@ -42,13 +37,12 @@ const REFRESH_TIME = 120 // seconds
 
 export default class ResultsPage extends Component {
     constructor(props) {
-
         super(props)
 
         this.state = {
-            updaterVisible: true,
-            updateFailed: false,
-            data: {
+            updaterVisible: true,   // Handles whether updater modal is visible
+            updateFailed: false,    // Handles whether "update failed" snackbar is shown
+            data: {                 // The data that is returned from the API (defaults to null, overwritten later)
                 date: null,
                 freq: null,
                 call: null,
@@ -58,26 +52,30 @@ export default class ResultsPage extends Component {
         }
     }
 
-    handleDismissSnackbar = () => {
-        console.log("Snackbar begone.")
-        this.setState({ updateFailed: false })
+    // When the page is loaded, need to immediately fetch the data.
+    componentDidMount = () => {
+        this.getData()
     }
 
-    componentDidMount = () => {
+    // Did the filter options change? Then we need to update our variables.
+    componentDidUpdate = () => {
         this.getData()
     }
 
     getData = () => {
         console.log("Getting data...")
 
+        // Clear both intervals so we can start from scratch.
         clearInterval(apiInterval);
         clearInterval(timerInterval);
 
+        // Show the modal and change the updating text
         this.setState({
             updaterVisible: true,
             nextUpdate: "Updating..."
         })
 
+        // Make the API call.
         axios.get('http://wspralert.herokuapp.com/api/scrape')
             .then(response => {
                 console.log(response.data);
@@ -123,15 +121,15 @@ export default class ResultsPage extends Component {
         // Retry in 10 seconds.
         console.log("Will retry in 10 seconds.")
         this.setTimers(10000);
-        this.setState({nextUpdate: 10})
+        this.setState({ nextUpdate: 10 })
     }
 
     updateTimer = () => {
         if (!this.state.nextUpdate) {
-            this.setState({nextUpdate: REFRESH_TIME})
+            this.setState({ nextUpdate: REFRESH_TIME })
         } else {
             var nextUpdate = this.state.nextUpdate;
-            this.setState({nextUpdate: nextUpdate - 1})
+            this.setState({ nextUpdate: nextUpdate - 1 })
         }
     }
 
@@ -139,6 +137,12 @@ export default class ResultsPage extends Component {
         apiInterval = setInterval(this.getData, interval)
         timerInterval = setInterval(this.updateTimer, 1000)
     }
+    
+    handleDismissSnackbar = () => {
+        console.log("Snackbar begone.")
+        this.setState({ updateFailed: false })
+    }
+
 
     render = () => {
         return (
