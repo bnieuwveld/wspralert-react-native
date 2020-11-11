@@ -57,11 +57,6 @@ export default class ResultsPage extends Component {
         this.getData()
     }
 
-    // Did the filter options change? Then we need to update our variables.
-    componentDidUpdate = () => {
-        this.getData()
-    }
-
     getData = () => {
         console.log("Getting data...")
 
